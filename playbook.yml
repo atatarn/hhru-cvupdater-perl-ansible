@@ -2,8 +2,8 @@
 - hosts: hhru
   remote_user: root
   vars:
-   mojo_user: "www-man"
-   mojo_home: "/opt/www"
+   mojo_user: "mojo"
+   mojo_home: "/opt/mojo"
    mojo_port: 8883
    mojo_secret: "a2d837c2a11f7752dcc78350318b735b30"
    hhru_clientid: "place some id here"
@@ -84,6 +84,13 @@
      src: /etc/nginx/sites-available/hhru-nginx
      dest: /etc/nginx/sites-enabled/hhru-nginx
      state: link
+
+  - name: create a database
+    become: yes
+    become_user: "{{ mojo_user }}"
+    shell: ./cvupdater deploy
+    args:
+     chdir: "{{ mojo_home }}/hhru/script/"
 
   - name: start Mojolicious
     become: yes
