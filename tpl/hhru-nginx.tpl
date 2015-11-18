@@ -1,12 +1,12 @@
 upstream hhru {
-	server 127.0.0.1:8883;
+	server 127.0.0.1:{{ mojo_port }};
 }
 
 server {
 	listen 80;
-	server_name scm-01.mozgam.net;
-	access_log /var/log/nginx/hhru.access.log;
-	error_log  /var/log/nginx/hhru.error.log;
+	server_name {{ nginx_hostname }};
+	access_log /var/log/nginx/{{ nginx_hostname }}.access.log;
+	error_log  /var/log/nginx/{{ nginx_hostname }}.error.log;
 
 	location / {
 		proxy_pass http://hhru;

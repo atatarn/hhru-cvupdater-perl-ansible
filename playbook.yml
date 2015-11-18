@@ -1,26 +1,34 @@
 ---
 - hosts: hhru
   remote_user: root
+  vars:
+   mojo_user: "www-man"
+   mojo_home: "/opt/www"
+   mojo_port: 8883
+   mojo_secret: "a2d837c2a11f7752dcc78350318b735b30"
+   hhru_clientid: "place some id here"
+   hhru_secret: "place some secret here"
+   nginx_hostname: "scm-01.mozgam.net"
 
   tasks:
 
-  - name: add user www-man
+  - name: add user {{ mojo_user }}
     user:
-     name: www-man
+     name: "{{ mojo_user }}"
      shell: /bin/false
-     home: /opt/www
+     home: "{{ mojo_home }}"
 
-  - name: add www-man to sudoers
+  - name: add {{ mojo_user }} to sudoers
     lineinfile:
      dest: /etc/sudoers
-     line: "www-man ALL=(ALL:ALL) NOPASSWD:ALL"
+     line: "{{ mojo_user }} ALL=(ALL:ALL) NOPASSWD:ALL"
 
   - name: upgrade system
     apt:
      update_cache: yes
      upgrade: full
 
-  - name: install dependencies
+  - name: install apt dependencies
     apt: name={{ item }} state=latest
     with_items:
       - "build-essential"
@@ -30,20 +38,59 @@
 
   - name: clone repositoy
     become: yes
-    become_user: www-man
+    become_user: "{{ mojo_user }}"
     git:
      clone: yes
      repo: https://github.com/somepad/hhru-cvupdater-perl.git
-     dest: /opt/www/hhru
+     dest: "{{ mojo_home }}/hhru"
 
-  - name: install hhru-updater-perl
+  - name: install perl modules
     become: yes
-    become_user: www-man
+    become_user: "{{ mojo_user }}"
     shell: ./setup.sh
     args:
-     chdir: /opt/www/hhru/install/
+     chdir: "{{ mojo_home }}/hhru/install/"
 
-#  - name: install nginx
-#    apt: name=nginx state=latest
-#  - name: check nginx
-#    service: name=nginx state=running enabled=yes
+  - name: lib/CVUpdater.pm <-- mojo port
+    become: yes
+    become_user: "{{ mojo_user }}"
+    replace:
+     dest: "{{ mojo_home }}/hhru/lib/CVUpdater.pm"
+     regexp: '^(.+)#mojo_port#(.+)$'
+     replace: '\g<1>{{ mojo_port }}\g<2>'
+
+  - name: lib/CVUpdater.pm <-- mojo secret
+    become: yes
+    become_user: "{{ mojo_user }}"
+    replace:
+     dest: "{{ mojo_home }}/hhru/lib/CVUpdater.pm"
+     regexp: '^(.+)#mojo_secret#(.+)$'
+     replace: '\g<1>{{ mojo_secret }}\g<2>'
+
+  - name: place c_v_updater.conf
+    become: yes
+    become_user: "{{ mojo_user }}"
+    template:
+     src: tpl/c_v_updater.conf.tpl
+     dest: "{{ mojo_home }}/hhru/c_v_updater.conf"
+
+  - name: place nginx config
+    template:
+     src: tpl/hhru-nginx.tpl
+     dest: /etc/nginx/sites-available/hhru-nginx
+
+  - name: add nginx virtualhost
+    file:
+     src: /etc/nginx/sites-available/hhru-nginx
+     dest: /etc/nginx/sites-enabled/hhru-nginx
+     state: link
+
+  - name: start Mojolicious
+    become: yes
+    become_user: "{{ mojo_user }}"
+    shell: ./ctl start
+    args:
+     chdir: "{{ mojo_home }}/hhru/script/"
+
+  - name: start nginx
+    service: name=nginx state=restarted enabled=yes

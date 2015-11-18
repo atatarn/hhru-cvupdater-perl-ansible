@@ -1,7 +1,7 @@
 {
 	App => {
 		UA => 'https://github.com/somepad/hhru-cvupdater-perl',
-		ClientID => '',
-		ClientSecret => ''
+		ClientID => '{{ hhru_clientid }}',
+		ClientSecret => '{{ hhru_secret }}'
 	}
 };
