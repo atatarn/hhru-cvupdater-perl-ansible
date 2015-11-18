@@ -1,0 +1,49 @@
+---
+- hosts: hhru
+  remote_user: root
+
+  tasks:
+
+  - name: add user www-man
+    user:
+     name: www-man
+     shell: /bin/false
+     home: /opt/www
+
+  - name: add www-man to sudoers
+    lineinfile:
+     dest: /etc/sudoers
+     line: "www-man ALL=(ALL:ALL) NOPASSWD:ALL"
+
+  - name: upgrade system
+    apt:
+     update_cache: yes
+     upgrade: full
+
+  - name: install dependencies
+    apt: name={{ item }} state=latest
+    with_items:
+      - "build-essential"
+      - "libssl-dev"
+      - "curl"
+      - "nginx"
+
+  - name: clone repositoy
+    become: yes
+    become_user: www-man
+    git:
+     clone: yes
+     repo: https://github.com/somepad/hhru-cvupdater-perl.git
+     dest: /opt/www/hhru
+
+  - name: install hhru-updater-perl
+    become: yes
+    become_user: www-man
+    shell: ./setup.sh
+    args:
+     chdir: /opt/www/hhru/install/
+
+#  - name: install nginx
+#    apt: name=nginx state=latest
+#  - name: check nginx
+#    service: name=nginx state=running enabled=yes
