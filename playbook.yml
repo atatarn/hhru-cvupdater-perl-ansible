@@ -5,10 +5,10 @@
    mojo_user: "mojo"
    mojo_home: "/opt/mojo"
    mojo_port: 8883
-   mojo_secret: "a2d837c2a11f7752dcc78350318b735b30"
+   mojo_secret: "some secret to sign cookies (e.g. md5-like string)"
    hhru_clientid: "place some id here"
    hhru_secret: "place some secret here"
-   nginx_hostname: "scm-01.mozgam.net"
+   nginx_hostname: "place domain name here"
 
   tasks:
 
